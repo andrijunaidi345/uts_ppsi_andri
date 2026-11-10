@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Smart Food Safety Lampung — Platform Terintegrasi BBPOM & Dinas Ketahanan Pangan</title>
+
+  <!-- Google Fonts: Inter, Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet" />
+
+  <!-- Material Symbols Outlined -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    rel="stylesheet" />
+
+  <!-- Leaflet CSS for Lampung Market Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "sfs-primary": "#046a5b",
+            "sfs-primary-dark": "#024a3f",
+            "sfs-primary-light": "#0d8a77",
+            "sfs-gold": "#d97706",
+            "sfs-surface": "#f8fafc",
+            "sfs-dark": "#0f172a"
+          },
+          fontFamily: {
+            sans: ["Inter", "system-ui", "sans-serif"],
+            display: ["Plus Jakarta Sans", "Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom styling for realistic device frame & map */
+    .lampung-gold-gradient {
+      background: linear-gradient(135deg, #064e3b 0%, #046a5b 50%, #024a3f 100%);
+    }
+
+    .badge-glow {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Print styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #official-report-printable-area,
+      #official-report-printable-area * {
+        visibility: visible;
+      }
+
+      #official-report-printable-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        background: white !important;
+        color: black !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body
+  class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-emerald-600 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- 1. MANDATORY HEADER: LOGO PEMDA (KIRI) | BANNER (TENGAH) | LOGO UTI (KANAN) -->
+  <!-- ========================================================================= -->
+  <header
+    class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-sm transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
+
+      <!-- Pojok Kiri Header: Logo Resmi Pemda Lampung / Bandar Lampung -->
+      <div class="flex items-center space-x-3 flex-shrink-0">
+        <a href="#" onclick="window.sfsApp.switchRole('inspector'); return false;"
+          class="group flex items-center space-x-2">
+          <img src="public/LOGO_KOTA_BANDAR_LAMPUNG_BARU.png" alt="Logo Pemda Lampung"
+            class="h-11 sm:h-14 w-auto object-contain transition-transform group-hover:scale-105"
+            onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/4/4e/Lambang_Kota_Bandar_Lampung.png'" />
+          <div class="hidden lg:block text-left border-l border-slate-200 pl-2.5">
+            <span class="block text-[11px] font-bold text-slate-700 tracking-wider uppercase leading-none">Pemerintah
+              Provinsi Lampung</span>
+            <span class="block text-[10px] text-slate-500 font-medium mt-0.5">Dinas Ketahanan Pangan & Pertanian</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Tengah / Identity Banner: Judul Sistem & Badge Resmi Terintegrasi -->
+      <div class="text-center flex-1 max-w-2xl px-2">
+        <div
+          class="inline-flex items-center justify-center space-x-1.5 px-3 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 mb-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+          <span class="text-[11px] sm:text-xs font-bold text-emerald-800 tracking-wide uppercase">
+            Smart Food Safety Lampung
+          </span>
+          <span class="text-slate-300 font-light hidden sm:inline">|</span>
+          <span class="text-[10px] sm:text-[11px] font-semibold text-emerald-700 hidden sm:inline">
+            Terintegrasi BBPOM & Dinas Ketahanan Pangan
+          </span>
+        </div>
+        <h1
+          class="text-xs sm:text-sm md:text-base font-extrabold text-slate-800 tracking-tight leading-tight hidden md:block">
+          Sistem Digitalisasi Inspeksi Keamanan Pangan & Keterlacakan Pasar Tradisional
+        </h1>
+      </div>
+
+      <!-- Pojok Kanan Header: Logo Resmi Universitas Teknokrat Indonesia -->
+      <div class="flex items-center space-x-3 flex-shrink-0">
+        <div class="hidden lg:block text-right border-r border-slate-200 pr-2.5">
+          <span class="block text-[11px] font-bold text-emerald-800 tracking-wider uppercase leading-none">Universitas
+            Teknokrat Indonesia</span>
+          <span class="block text-[10px] text-slate-500 font-medium mt-0.5">ASEAN's Best Private University</span>
+        </div>
+        <a href="https://teknokrat.ac.id" target="_blank" rel="noopener noreferrer" class="group flex items-center">
+          <img src="public/UNIVERSITASTEKNOKRAT.png" alt="Logo Universitas Teknokrat Indonesia"
+            class="h-11 sm:h-14 w-auto object-contain transition-transform group-hover:scale-105"
+            onerror="this.src='https://teknokrat.ac.id/wp-content/uploads/2021/07/Logo-Universitas-Teknokrat-Indonesia.png'" />
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Navigation Bar: Role Switcher & Operational Tools -->
+    <div class="bg-slate-50 border-t border-slate-200/80 px-3 sm:px-6 py-2">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+
+        <!-- Role-Based Access Control (RBAC) Switcher -->
+        <div class="flex items-center space-x-1 sm:space-x-1.5 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
+          <span
+            class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 hidden sm:inline">Peran:</span>
+
+          <button data-role="inspector"
+            class="role-switcher-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 text-white shadow">
+            📱 Mobile Inspector
+          </button>
+          <button data-role="public"
+            class="role-switcher-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+            🌐 Peta Pasar & Aduan
+          </button>
+          <button data-role="dashboard"
+            class="role-switcher-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+            📊 Dashboard Dinas/BBPOM
+          </button>
+          <button data-role="trader"
+            class="role-switcher-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+            🏪 E-Lapak Pedagang
+          </button>
+          <button data-role="scanner"
+            class="role-switcher-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+            🔍 Scan QR Lapak
+          </button>
+        </div>
+
+        <!-- Quick Status Badges: Offline-First Simulator & CITO Status -->
+        <div class="flex items-center space-x-2">
+          <!-- Tombol Simulasi Online/Offline -->
+          <button onclick="window.sfsApp.toggleNetworkSimulation()"
+            title="Klik untuk menguji mode Offline-First (penyimpanan antrean lokal)"
+            class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-300 hover:bg-slate-100 flex items-center space-x-1.5 shadow-sm">
+            <span
+              class="network-status-badge inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1"></span> ONLINE (BBPOM
+              Cloud)
+            </span>
+          </button>
+
+          <!-- Queue Offline Badge -->
+          <span
+            class="hidden px-2 py-1 rounded-md text-[11px] font-bold bg-amber-500 text-white shadow flex items-center space-x-1"
+            title="Data tersimpan lokal menunggu sinkronisasi">
+            <span>💾 Antrean:</span>
+            <span class="offline-queue-count">0</span>
+          </span>
+
+          <!-- Quick Test Scenarios Dropdown -->
+          <div class="relative inline-block text-left">
+            <button onclick="document.getElementById('quick-test-menu').classList.toggle('hidden')"
+              class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white shadow-sm flex items-center space-x-1">
+              <span>⚡ Preset Pengujian</span>
+              <span class="text-[10px]">▼</span>
+            </button>
+            <div id="quick-test-menu"
+              class="hidden absolute right-0 mt-1 w-64 rounded-xl bg-white shadow-2xl border border-slate-200 z-50 py-1.5 text-xs text-slate-700">
+              <div class="px-3 py-1 text-[10px] font-bold uppercase text-slate-400 border-b border-slate-100">Simulasi
+                Kasus Nyata Lampung</div>
+              <button
+                onclick="window.sfsApp.simulateScanToken('SFS-LPG-PG01-SAFE-2026'); window.sfsApp.switchRole('scanner'); document.getElementById('quick-test-menu').classList.add('hidden')"
+                class="w-full text-left px-3 py-2 hover:bg-emerald-50 flex items-center space-x-2">
+                <span class="text-emerald-600 font-bold">✓</span>
+                <div>
+                  <span class="font-bold block">Lapak Daging Pasir Gintung</span>
+                  <span class="text-[10px] text-slate-400">Formalin Negatif, Skor 98.5</span>
+                </div>
+              </button>
+              <button
+                onclick="window.sfsApp.simulateScanToken('SFS-LPG-PJ08-ALERT-2026'); window.sfsApp.switchRole('scanner'); document.getElementById('quick-test-menu').classList.add('hidden')"
+                class="w-full text-left px-3 py-2 hover:bg-rose-50 flex items-center space-x-2">
+                <span class="text-rose-600 font-bold">🚨</span>
+                <div>
+                  <span class="font-bold text-rose-700 block">Lapak Teri Pasar Panjang (CITO)</span>
+                  <span class="text-[10px] text-slate-400">Positif Formalin 28.4 ppm</span>
+                </div>
+              </button>
+              <button
+                onclick="window.sfsApp.switchRole('dashboard'); window.sfsApp.openOfficialReportPrintView(); document.getElementById('quick-test-menu').classList.add('hidden')"
+                class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center space-x-2 border-t border-slate-100">
+                <span>🖨️</span>
+                <span class="font-medium">Cetak Laporan Resmi Sidak (PDF)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN CONTENT AREA: 5 ROLE-BASED OPERATIONAL INTERFACES                 -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-6">
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- VIEW 1: 📱 MOBILE INSPECTOR (OFFLINE-FIRST, LIVE CAMERA, GPS, AI)     -->
+    <!-- --------------------------------------------------------------------- -->
+    <section id="view-inspector" class="space-y-4">
+
+      <!-- Control Bar Inspector -->
+      <div
+        class="flex flex-wrap items-center justify-between bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm gap-2">
+        <div class="flex items-center space-x-2">
+          <span
+            class="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-lg shadow">
+            📋
+          </span>
+          <div>
+            <h2 class="text-sm font-bold text-slate-900 leading-tight">Formulir Sidak Rapid Test Lapangan
+              (Offline-First)</h2>
+            <p class="text-xs text-slate-500">Petugas: <b class="text-emerald-800">Andri Junaidi, S.Tr.Kes</b> (NIP
+              199507142021021003)</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button id="btn-toggle-mobile-frame" onclick="window.sfsApp.toggleMobileFrame()"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+            📱 Mode iPhone Mockup
+          </button>
+          <button onclick="window.sfsApp.autoSyncOfflineData()"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white shadow transition flex items-center space-x-1">
+            <span>☁️ Sinkronkan Data</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Outer Frame (Responsive or Mockup Frame) -->
+      <div id="mobile-inspector-frame"
+        class="max-w-md mx-auto bg-slate-900 p-3 rounded-[40px] shadow-2xl border-4 border-slate-700 transition-all duration-300">
+
+        <!-- Phone Inner Body -->
+        <div
+          class="bg-slate-50 rounded-[32px] overflow-hidden border border-slate-300 shadow-inner flex flex-col min-h-[750px]">
+
+          <!-- Phone Status Bar -->
+          <div
+            class="bg-emerald-900 text-white px-5 py-2.5 flex items-center justify-between text-[11px] font-mono select-none">
+            <span class="font-bold">06:45 WIB</span>
+            <div class="w-20 h-4 bg-black rounded-full mx-auto"></div>
+            <div class="flex items-center space-x-1">
+              <span>📶 4G</span>
+              <span>🔋 94%</span>
+            </div>
+          </div>
+
+          <!-- Phone Header -->
+          <div
+            class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white px-4 py-3 flex items-center justify-between shadow">
+            <div>
+              <span class="text-[10px] tracking-wider uppercase text-emerald-200 font-semibold block">Pengawas BBPOM &
+                Dinas</span>
+              <h3 class="text-sm font-bold leading-none">Smart Food Safety Inspector</h3>
+            </div>
+            <span
+              class="network-status-badge text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-600/90 text-white border border-emerald-400">
+              ● ONLINE
+            </span>
+          </div>
+
+          <!-- Inspector Body (Scrollable) -->
+          <div class="p-4 space-y-4 flex-1 overflow-y-auto custom-scrollbar text-left">
+
+            <!-- 1. Form Data Lokasi Sidak Pasar Lampung -->
+            <form id="inspector-sidak-form" onsubmit="window.sfsApp.submitInspectionForm(event)" class="space-y-4">
+
+              <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <span class="text-xs font-bold text-slate-800 flex items-center space-x-1">
+                    <span>📍</span>
+                    <span>1. Lokasi & Identitas Lapak</span>
+                  </span>
+                  <span
+                    class="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">FR-01</span>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 mb-1">Pilih Pasar Tradisional
+                    se-Lampung:</label>
+                  <select id="inspector-market-select"
+                    class="w-full text-xs p-2 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:border-emerald-600 outline-none">
+                    <option value="MKT-01">Pasar Pasir Gintung (Kota Bandar Lampung)</option>
+                    <option value="MKT-02">Pasar Bambu Kuning (Kota Bandar Lampung)</option>
+                    <option value="MKT-03">Pasar Panjang (Kota Bandar Lampung)</option>
+                    <option value="MKT-04">Pasar Tugu (Kota Bandar Lampung)</option>
+                    <option value="MKT-05">Pasar Smep (Kota Bandar Lampung)</option>
+                    <option value="MKT-06">Pasar Kangkung (Kota Bandar Lampung)</option>
+                    <option value="MKT-07">Pasar Koga (Kota Bandar Lampung)</option>
+                    <option value="MKT-08">Pasar Natar (Lampung Selatan)</option>
+                    <option value="MKT-09">Pasar Kopindo Metro (Kota Metro)</option>
+                    <option value="MKT-10">Pasar Bandar Jaya Plaza (Lampung Tengah)</option>
+                  </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Nomor / Blok Lapak:</label>
+                    <input type="text" id="inspector-stall-no" value="Blok A No. 01" required
+                      class="w-full text-xs p-2 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:border-emerald-600 outline-none"
+                      placeholder="Misal: Blok B-04" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Nama Pedagang:</label>
+                    <input type="text" id="inspector-trader-name" value="H. Syamsul Arifin" required
+                      class="w-full text-xs p-2 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:border-emerald-600 outline-none"
+                      placeholder="Nama Pedagang" />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Kategori Komoditas:</label>
+                    <select id="inspector-commodity-category"
+                      class="w-full text-xs p-2 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:border-emerald-600 outline-none">
+                      <option value="raw_meat">Daging Sapi / Kerbau</option>
+                      <option value="seafood">Ikan Laut & Seafood</option>
+                      <option value="poultry">Daging Ayam / Unggas</option>
+                      <option value="processed_food">Tahu / Mie / Olahan</option>
+                      <option value="leafy_greens">Sayuran Hijau / Cabai</option>
+                      <option value="fruits">Buah Segar</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Jenis Sampel Spesifik:</label>
+                    <input type="text" id="inspector-commodity-select" value="Daging Sapi Has Luar" required
+                      class="w-full text-xs p-2 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:border-emerald-600 outline-none"
+                      placeholder="Misal: Teri Nasi" />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 mb-1">Asal Distributor / Rantai Pasok
+                    (FR-08):</label>
+                  <select id="inspector-supplier-select"
+                    class="w-full text-xs p-2 rounded-lg border border-slate-300 bg-slate-50 focus:bg-white focus:border-emerald-600 outline-none">
+                    <option value="SUP-01">RPH Way Laga Kota Bandar Lampung (Tersertifikasi)</option>
+                    <option value="SUP-02">TPI Lempasing Pesawaran (Ikan Segar Bebas Formalin)</option>
+                    <option value="SUP-03">Sentra Tahu Tempe Gunung Sulah (Bebas Metanil Yellow)</option>
+                    <option value="SUP-04">Petani Dataran Tinggi Sekincau Lampung Barat (Prima-3)</option>
+                    <option value="SUP-05">CV Samudera Jaya (Distributor Teri Teluk Betung)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 mb-1">Geofencing Titik Koordinat GPS
+                    (Terkunci):</label>
+                  <input type="text" readonly
+                    class="inspector-gps-coords w-full text-[11px] font-mono p-2 rounded-lg border border-slate-200 bg-slate-100 text-slate-600"
+                    value="-5.40932, 105.25364 (Akurasi: ±3.2m)" />
+                </div>
+              </div>
+
+              <!-- 2. Live Photo Capture + Watermark Timestamp & Geofencing (FR-03 & Rule 5.1.1) -->
+              <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <span class="text-xs font-bold text-slate-800 flex items-center space-x-1">
+                    <span>📷</span>
+                    <span>2. Foto Bukti Live Capture & Watermark</span>
+                  </span>
+                  <span
+                    class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Anti-Manipulasi</span>
+                </div>
+
+                <!-- Video / Stream Preview Container -->
+                <div
+                  class="relative bg-slate-900 rounded-xl overflow-hidden min-h-[180px] flex items-center justify-center">
+                  <!-- Stream Video -->
+                  <video id="camera-stream-video" autoplay playsinline class="w-full h-48 object-cover hidden"></video>
+
+                  <!-- Simulation Container -->
+                  <div id="camera-preview-container" class="w-full">
+                    <div
+                      class="relative w-full h-48 bg-slate-800 flex flex-col items-center justify-center text-white p-3 text-center">
+                      <span class="text-2xl mb-1">📹</span>
+                      <p class="text-xs font-bold">Kamera Pengawas Siap Aktif</p>
+                      <p class="text-[11px] text-slate-300 mt-1">Klik tombol di bawah untuk live capture ber-GPS</p>
+                    </div>
+                  </div>
+
+                  <!-- Captured Photo Preview -->
+                  <img id="captured-photo-preview" class="w-full h-48 object-cover hidden"
+                    alt="Captured Watermarked Sample" />
+
+                  <!-- Hidden Canvas for Watermark Generation -->
+                  <canvas id="camera-capture-canvas" class="hidden"></canvas>
+                </div>
+
+                <!-- Action Camera Buttons -->
+                <div class="flex items-center space-x-2">
+                  <button type="button" onclick="window.sfsApp.startCameraStream()"
+                    class="flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white transition flex items-center justify-center space-x-1">
+                    <span>🎥 Buka Kamera</span>
+                  </button>
+                  <button type="button" id="btn-capture-photo" onclick="window.sfsApp.captureLivePhoto()"
+                    class="flex-1 py-2 px-3 rounded-lg text-xs font-extrabold bg-emerald-700 hover:bg-emerald-800 text-white shadow transition flex items-center justify-center space-x-1">
+                    <span>📸 Jepret & Watermark</span>
+                  </button>
+                  <button type="button" id="btn-retake-photo" onclick="window.sfsApp.retakePhoto()"
+                    class="hidden py-2 px-3 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition">
+                    🔄 Foto Ulang
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Rapid Test 5 Parameter Kimia Berbahaya (FR-02) -->
+              <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <span class="text-xs font-bold text-slate-800 flex items-center space-x-1">
+                    <span>🧪</span>
+                    <span>3. Rapid Test Kit (5 Parameter Kimia)</span>
+                  </span>
+                  <span class="text-[10px] font-mono text-rose-600 bg-rose-50 px-2 py-0.5 rounded font-bold">Wajib
+                    Diuji</span>
+                </div>
+
+                <!-- Param 1: Formalin -->
+                <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-xs font-bold text-slate-800 block">Formalin (Formaldehida)</span>
+                      <span class="text-[10px] text-slate-500">Ambang: 0 ppm (Ikan, Daging, Tahu, Mie)</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                      <label class="inline-flex items-center text-xs font-bold text-emerald-700 cursor-pointer">
+                        <input type="radio" name="test_formalin" value="NEGATIF" checked
+                          class="mr-1 text-emerald-600 focus:ring-emerald-500" />
+                        Negatif (Aman)
+                      </label>
+                      <label class="inline-flex items-center text-xs font-bold text-rose-700 cursor-pointer">
+                        <input type="radio" name="test_formalin" value="POSITIF"
+                          class="mr-1 text-rose-600 focus:ring-rose-500" />
+                        POSITIF 🚨
+                      </label>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-2 pt-1 border-t border-slate-200">
+                    <span class="text-[10px] text-slate-500">Kadar Uji (ppm):</span>
+                    <input type="number" id="input-ppm-formalin" step="0.1" value="0.0"
+                      class="w-20 text-xs p-1 rounded border border-slate-300 font-mono text-right" />
+                    <span class="text-[10px] text-slate-400">ppm</span>
+                  </div>
+                </div>
+
+                <!-- Param 2: Boraks -->
+                <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-xs font-bold text-slate-800 block">Boraks / Asam Borat (Bleng)</span>
+                      <span class="text-[10px] text-slate-500">Ambang: 0 ppm (Bakso, Lontong, Kerupuk)</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                      <label class="inline-flex items-center text-xs font-bold text-emerald-700 cursor-pointer">
+                        <input type="radio" name="test_boraks" value="NEGATIF" checked class="mr-1 text-emerald-600" />
+                        Negatif (Aman)
+                      </label>
+                      <label class="inline-flex items-center text-xs font-bold text-rose-700 cursor-pointer">
+                        <input type="radio" name="test_boraks" value="POSITIF" class="mr-1 text-rose-600" />
+                        POSITIF 🚨
+                      </label>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-2 pt-1 border-t border-slate-200">
+                    <span class="text-[10px] text-slate-500">Kadar Uji (ppm):</span>
+                    <input type="number" id="input-ppm-boraks" step="0.1" value="0.0"
+                      class="w-20 text-xs p-1 rounded border border-slate-300 font-mono text-right" />
+                    <span class="text-[10px] text-slate-400">ppm</span>
+                  </div>
+                </div>
+
+                <!-- Param 3: Rhodamin B -->
+                <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div>
+                    <span class="text-xs font-bold text-slate-800 block">Rhodamin B (Pewarna Merah Tekstil)</span>
+                    <span class="text-[10px] text-slate-500">Terasi Udang, Kerupuk Merah, Sirup</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <label class="inline-flex items-center text-xs font-bold text-emerald-700 cursor-pointer">
+                      <input type="radio" name="test_rhodamin" value="NEGATIF" checked class="mr-1" />
+                      Negatif
+                    </label>
+                    <label class="inline-flex items-center text-xs font-bold text-rose-700 cursor-pointer">
+                      <input type="radio" name="test_rhodamin" value="POSITIF" class="mr-1" />
+                      POSITIF
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Param 4: Metanil Yellow -->
+                <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div>
+                    <span class="text-xs font-bold text-slate-800 block">Metanil Yellow (Pewarna Kuning Tekstil)</span>
+                    <span class="text-[10px] text-slate-500">Tahu Kuning, Mie Kuning Basah</span>
+                  </div>
+                  <div class="flex items-center space-x-3">
+                    <label class="inline-flex items-center text-xs font-bold text-emerald-700 cursor-pointer">
+                      <input type="radio" name="test_metanil" value="NEGATIF" checked class="mr-1" />
+                      Negatif
+                    </label>
+                    <label class="inline-flex items-center text-xs font-bold text-rose-700 cursor-pointer">
+                      <input type="radio" name="test_metanil" value="POSITIF" class="mr-1" />
+                      POSITIF
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Param 5: Residu Pestisida & Nitrit -->
+                <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-xs font-bold text-slate-800 block">Residu Pestisida & Nitrit</span>
+                      <span class="text-[10px] text-slate-500">Batas Maksimum Residu (BMR): &lt; 0.20 ppm</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                      <label class="inline-flex items-center text-xs font-bold text-emerald-700 cursor-pointer">
+                        <input type="radio" name="test_pestisida" value="NEGATIF" checked class="mr-1" />
+                        Aman
+                      </label>
+                      <label class="inline-flex items-center text-xs font-bold text-rose-700 cursor-pointer">
+                        <input type="radio" name="test_pestisida" value="POSITIF" class="mr-1" />
+                        Melebihi BMR
+                      </label>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-2 pt-1 border-t border-slate-200">
+                    <span class="text-[10px] text-slate-500">Hasil Analisis (ppm):</span>
+                    <input type="number" id="input-ppm-pestisida" step="0.01" value="0.01"
+                      class="w-20 text-xs p-1 rounded border border-slate-300 font-mono text-right" />
+                    <span class="text-[10px] text-slate-400">ppm</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- 4. Modul AI Freshness & Anomaly Engine (Spesifikasi skill.md) -->
+              <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div class="flex items-center space-x-1.5">
+                    <span class="text-base">🤖</span>
+                    <div>
+                      <span class="text-xs font-bold text-slate-800 block leading-tight">AI Skill: Freshness & Sensor
+                        Engine</span>
+                      <span class="text-[10px] text-slate-400">Model Arrhenius & Computer Vision Decay</span>
+                    </div>
+                  </div>
+                  <span class="text-[10px] font-mono text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded font-bold">&lt;
+                    800ms SLA</span>
+                </div>
+
+                <!-- Sensor Telemetry Sliders -->
+                <div class="space-y-2 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] text-slate-600">Suhu Cold Chain Storage (°C):</span>
+                    <input type="number" id="ai-input-temp" value="2.8" step="0.1"
+                      class="w-16 p-1 border rounded text-right font-mono" />
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] text-slate-600">Kelembaban Relatif (% RH):</span>
+                    <input type="number" id="ai-input-humidity" value="78"
+                      class="w-16 p-1 border rounded text-right font-mono" />
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] text-slate-600">Konsentrasi Gas Spoilage / VOC (ppm):</span>
+                    <input type="number" id="ai-input-voc" value="0.28" step="0.01"
+                      class="w-16 p-1 border rounded text-right font-mono" />
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] text-slate-600">Lama Durasi Display di Lapak (Jam):</span>
+                    <input type="number" id="ai-input-duration" value="3.5" step="0.5"
+                      class="w-16 p-1 border rounded text-right font-mono" />
+                  </div>
+                </div>
+
+                <!-- Tombol Evaluasi AI -->
+                <button type="button" id="btn-run-ai-eval" onclick="window.sfsApp.runManualAiEvaluation()"
+                  class="w-full py-2 px-3 rounded-lg text-xs font-extrabold bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800 text-white shadow transition flex items-center justify-center space-x-1.5">
+                  <span>🧠 Evaluasi Kesegaran & Anomali (AI Engine)</span>
+                </button>
+
+                <!-- Hidden Input to store AI score -->
+                <input type="hidden" id="inspector-ai-score-field" value="95" />
+
+                <!-- AI Output Result Card -->
+                <div id="ai-result-display-card" class="hidden"></div>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="pt-2">
+                <button type="submit"
+                  class="w-full py-3 px-4 rounded-xl text-xs font-extrabold bg-emerald-700 hover:bg-emerald-800 text-white shadow-lg transition transform active:scale-95 flex items-center justify-center space-x-2">
+                  <span>💾 SIMPAN HASIL SIDAK & TERBITKAN STATUS</span>
+                </button>
+                <p class="text-[10px] text-slate-400 text-center mt-1.5">
+                  Sesuai SOP BBPOM Lampung: Temuan positif otomatis memicu CITO Red Alert &lt; 10 detik.
+                </p>
+              </div>
+
+            </form>
+
+            <!-- Riwayat Sidak Lapangan Terkini -->
+            <div class="pt-3 border-t border-slate-200">
+              <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Riwayat Sidak Terakhir
+                Pengawas:</h4>
+              <div id="inspector-history-list" class="space-y-2"></div>
+            </div>
+
+          </div>
+
+          <!-- Mandatory Footer inside Mobile Frame Viewport -->
+          <footer class="bg-slate-900 text-slate-400 p-2.5 text-center text-[10px] border-t border-slate-800">
+            <span class="font-medium text-slate-300">Copyright©2026 by M. Andri Junaidi dan Dr. Erliyan Redy Susanto,
+              M.Kom</span>
+          </footer>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- VIEW 2: 🌐 PORTAL PUBLIK & PETA INTERAKTIF PASAR SE-LAMPUNG           -->
+    <!-- --------------------------------------------------------------------- -->
+    <section id="view-public" class="hidden space-y-6">
+
+      <!-- Public Hero Banner -->
+      <div
+        class="lampung-gold-gradient rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-2 text-left max-w-2xl">
+          <span
+            class="px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-md text-emerald-200 border border-white/30">
+            🛡️ Portal Transparansi Keamanan Pangan Publik
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Pantau Keamanan Pangan Pasar Tradisional se-Lampung
+          </h2>
+          <p class="text-xs sm:text-sm text-emerald-100 leading-relaxed">
+            Masyarakat dapat mengecek status higienitas lapak, hasil uji formalin/boraks terkini di seluruh pasar Kota
+            Bandar Lampung dan kabupaten, serta mengirimkan aduan pangan mencurigakan.
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <button onclick="document.getElementById('complaint-form-section').scrollIntoView({ behavior: 'smooth' })"
+            class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-extrabold rounded-xl text-xs shadow-lg transition">
+            ✍️ Lapor Aduan Pangan Warga
+          </button>
+          <button onclick="window.sfsApp.switchRole('scanner')"
+            class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs border border-white/30 backdrop-blur-md transition">
+            📷 Pindai QR Code Lapak
+          </button>
+        </div>
+      </div>
+
+      <!-- Peta Interaktif Keamanan Pasar Lampung (Leaflet) -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+              <span>🗺️ Peta Zonasi Keamanan Pangan Pasar Tradisional Lampung</span>
+            </h3>
+            <p class="text-xs text-slate-500">Klasifikasi Zona: Hijau (&gt;90% Bebas Racun), Kuning (80-89% Waspada),
+              Merah (&lt;80% Temuan CITO)</p>
+          </div>
+
+          <!-- Filter Peta -->
+          <div class="flex items-center space-x-1.5 text-xs">
+            <span class="text-slate-400 font-semibold mr-1">Filter:</span>
+            <button onclick="window.sfsApp.filterMap('ALL')"
+              class="px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">Semua</button>
+            <button onclick="window.sfsApp.filterMap('HIJAU')"
+              class="px-2.5 py-1 rounded-lg font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">Zona
+              Hijau</button>
+            <button onclick="window.sfsApp.filterMap('KUNING')"
+              class="px-2.5 py-1 rounded-lg font-bold bg-amber-100 text-amber-800 border border-amber-300">Zona
+              Waspada</button>
+            <button onclick="window.sfsApp.filterMap('MERAH')"
+              class="px-2.5 py-1 rounded-lg font-bold bg-rose-100 text-rose-800 border border-rose-300">Zona
+              Merah</button>
+          </div>
+        </div>
+
+        <!-- Map Container -->
+        <div id="lampung-interactive-map" class="w-full h-96 rounded-xl border border-slate-200 shadow-inner z-10">
+        </div>
+      </div>
+
+      <!-- Form Aduan Pangan Warga (Citizen Complaint Service - FR-10) -->
+      <div id="complaint-form-section" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Form Pelaporan -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-left">
+          <div class="border-b border-slate-100 pb-3">
+            <div class="flex items-center justify-between">
+              <span
+                class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 uppercase tracking-wide">
+                Layanan Aduan Publik BBPOM
+              </span>
+              <span class="text-[10px] text-slate-400 font-mono">FR-10</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-900 mt-1">Form Pengaduan Dugaan Pangan Berbahaya</h3>
+            <p class="text-xs text-slate-500">Laporkan temuan makanan mencurigakan berformalin, boraks, atau pewarna
+              tekstil.</p>
+          </div>
+
+          <form onsubmit="window.sfsApp.submitComplaintForm(event)" class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap Pelapor:</label>
+                <input type="text" id="complaint-name" required placeholder="Nama Anda"
+                  class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-emerald-600 outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Nomor WhatsApp / HP:</label>
+                <input type="text" id="complaint-phone" required placeholder="0812-XXXX-XXXX"
+                  class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-emerald-600 outline-none" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Pasar Tempat Temuan:</label>
+                <select id="complaint-market-select"
+                  class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-emerald-600 outline-none">
+                  <option value="MKT-01">Pasar Pasir Gintung</option>
+                  <option value="MKT-02">Pasar Bambu Kuning</option>
+                  <option value="MKT-03">Pasar Panjang</option>
+                  <option value="MKT-04">Pasar Tugu</option>
+                  <option value="MKT-05">Pasar Smep</option>
+                  <option value="MKT-06">Pasar Kangkung</option>
+                  <option value="MKT-07">Pasar Koga</option>
+                  <option value="MKT-08">Pasar Natar</option>
+                  <option value="MKT-09">Pasar Kopindo Metro</option>
+                  <option value="MKT-10">Pasar Bandar Jaya</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Perkiraan Nomor / Blok Lapak:</label>
+                <input type="text" id="complaint-stall" placeholder="Misal: Lorong ikan dekat gerbang"
+                  class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-emerald-600 outline-none" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Komoditas yang Dicurigai:</label>
+              <input type="text" id="complaint-commodity" required
+                placeholder="Misal: Ikan Asin Teri / Tahu Kuning / Mie Basah"
+                class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-emerald-600 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Deskripsi Temuan / Ciri Fisik Pangan:</label>
+              <textarea id="complaint-desc" rows="3" required
+                placeholder="Jelaskan aroma menyengat, tekstur kenyal membal, tidak dihinggapi lalat, atau warna kuning menyala..."
+                class="w-full text-xs p-2 rounded-lg border border-slate-300 focus:border-emerald-600 outline-none"></textarea>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center">
+              <span class="text-xl">📷</span>
+              <p class="text-xs font-semibold text-slate-700 mt-1">Unggah Foto Sampel / Bukti</p>
+              <p class="text-[10px] text-slate-400">Dukungan format JPG, PNG ber-geotagging</p>
+              <input type="file" accept="image/*" class="mt-2 text-xs text-slate-500" />
+            </div>
+
+            <button type="submit"
+              class="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs shadow-md transition">
+              Kirim Aduan Pangan Resmi ke BBPOM
+            </button>
+          </form>
+        </div>
+
+        <!-- Live Feed Aduan Warga Terkini -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-left">
+          <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Histori & Tindak Lanjut Aduan Warga</h3>
+              <p class="text-xs text-slate-500">Transparansi penyelidikan tim reaksi cepat BBPOM Lampung</p>
+            </div>
+            <span class="px-2 py-1 rounded bg-slate-100 text-slate-600 text-xs font-mono font-bold">Live Feed</span>
+          </div>
+
+          <div id="public-complaints-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- VIEW 3: 📊 EXECUTIVE DASHBOARD DINAS KETAHANAN PANGAN & BBPOM         -->
+    <!-- --------------------------------------------------------------------- -->
+    <section id="view-dashboard" class="hidden space-y-6">
+
+      <!-- Executive KPI Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-left">
+          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Pasar Terdaftar</span>
+          <span class="text-2xl font-black text-slate-900 mt-1 block">12 Pasar</span>
+          <span class="text-[10px] text-emerald-600 font-semibold mt-0.5 block">100% Pasar Utama Lampung</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-left">
+          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Total Sampel Sidak</span>
+          <span class="text-2xl font-black text-slate-900 mt-1 block">412 Sampel</span>
+          <span class="text-[10px] text-slate-400 font-semibold mt-0.5 block">Bulan Berjalan Nov 2026</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-left">
+          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Rasio Bebas Racun</span>
+          <span class="text-2xl font-black text-emerald-700 mt-1 block">94.8%</span>
+          <span class="text-[10px] text-emerald-600 font-semibold mt-0.5 block">Target Pemda &gt; 92%</span>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-left">
+          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Lapak QR Aman</span>
+          <span class="text-2xl font-black text-slate-900 mt-1 block">388 Lapak</span>
+          <span class="text-[10px] text-slate-500 font-semibold mt-0.5 block">Tersertifikasi Digital</span>
+        </div>
+        <div class="bg-rose-50 p-4 rounded-xl border border-rose-200 shadow-sm text-left col-span-2 md:col-span-1">
+          <span class="text-[11px] font-bold text-rose-700 uppercase tracking-wider block">CITO Red Alert</span>
+          <span class="text-2xl font-black text-rose-700 mt-1 block animate-pulse">1 Kasus</span>
+          <span class="text-[10px] text-rose-600 font-bold mt-0.5 block">Pasar Panjang (Formalin)</span>
+        </div>
+      </div>
+
+      <!-- Action & Export Bar -->
+      <div
+        class="flex flex-wrap items-center justify-between bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm gap-2">
+        <div class="flex items-center space-x-2">
+          <span class="text-xl">🏛️</span>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Command Center Eksekutif Dinas Ketahanan Pangan Provinsi
+              Lampung</h3>
+            <p class="text-xs text-slate-500">Integrasi Data BBPOM Bandar Lampung, UPTD Pasar, dan Penyidik PPNS</p>
+          </div>
+        </div>
+
+        <button onclick="window.sfsApp.openOfficialReportPrintView()"
+          class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow transition flex items-center space-x-1.5">
+          <span>🖨️</span>
+          <span>Cetak Dokumen Laporan Resmi (PDF)</span>
+        </button>
+      </div>
+
+      <!-- CITO Red Alert Control Room Feed -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 text-left">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-3 rounded-full bg-rose-600 animate-ping"></span>
+            <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Live Feed Temuan Kasus Bahan Berbahaya
+              (CITO Red Alert)</h4>
+          </div>
+          <span class="text-[10px] font-mono text-rose-600 bg-rose-50 px-2 py-0.5 rounded font-bold">Auto-Dispatch &lt;
+            10 Detik</span>
+        </div>
+        <div id="cito-dashboard-live-feed" class="space-y-2"></div>
+      </div>
+
+      <!-- Visual Analytic Charts (Chart.js) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <!-- Chart 1: Komoditas Rawan Racun -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2 text-left">
+          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Komoditas Paling Rawan Racun Kimia (%)
+          </h4>
+          <p class="text-[11px] text-slate-500">Hasil surveilans BBPOM se-Provinsi Lampung</p>
+          <div class="h-56 relative">
+            <canvas id="chart-commodity-risk"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Skor Kepatuhan per Daerah -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2 text-left">
+          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Kepatuhan Pasar per Kab/Kota (%)</h4>
+          <p class="text-[11px] text-slate-500">Bandar Lampung, Metro, Lamsel, Lamteng</p>
+          <div class="h-56 relative flex items-center justify-center">
+            <canvas id="chart-regional-compliance"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 3: Tren Sidak Mingguan -->
+        <div
+          class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2 text-left col-span-1 md:col-span-2 lg:col-span-1">
+          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Tren Sidak Mingguan (Sampel)</h4>
+          <p class="text-[11px] text-slate-500">Lolos Aman vs Temuan Positif Bahan Berbahaya</p>
+          <div class="h-56 relative">
+            <canvas id="chart-inspection-trend"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Audit Logs Table (Kepatuhan UU PDP No 27/2022 & UU Pangan No 18/2012) -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 text-left">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div>
+            <h4 class="text-sm font-bold text-slate-900">Audit Trail & Log Keamanan Terenkripsi (Non-Deletable)</h4>
+            <p class="text-xs text-slate-500">Pencatatan aktivitas inspeksi, perubahan status lapak, dan transmisi data
+              ber-hash SHA-256</p>
+          </div>
+          <span
+            class="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded font-bold border border-emerald-200">
+            UU PDP Compliant
+          </span>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr
+                class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="p-2.5">Waktu WIB</th>
+                <th class="p-2.5">Aktor Sistem</th>
+                <th class="p-2.5">Aktivitas / Event</th>
+                <th class="p-2.5">Target Sumber Daya</th>
+                <th class="p-2.5">Checksum Hash</th>
+              </tr>
+            </thead>
+            <tbody id="audit-logs-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- VIEW 4: 🏪 PORTAL PEDAGANG PASAR (E-LAPAK DIGITAL & SERTIFIKASI)       -->
+    <!-- --------------------------------------------------------------------- -->
+    <section id="view-trader" class="hidden space-y-6">
+      <div class="max-w-3xl mx-auto space-y-4">
+
+        <div class="bg-emerald-900 text-white p-5 rounded-2xl shadow-lg flex items-center justify-between text-left">
+          <div>
+            <span
+              class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-700 text-emerald-100 uppercase tracking-wider">
+              Portal Pedagang Pasar Tradisional
+            </span>
+            <h2 class="text-xl font-bold mt-1">E-Lapak Aman Pangan Lampung</h2>
+            <p class="text-xs text-emerald-200">Kelola sertifikat uji berkala, data distributor resmi, dan stiker QR
+              Code lapak.</p>
+          </div>
+          <span class="text-4xl">🏪</span>
+        </div>
+
+        <div id="trader-portal-card"></div>
+
+      </div>
+    </section>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- VIEW 5: 🔍 PUBLIC QR CODE SCANNER VIEWPORT                             -->
+    <!-- --------------------------------------------------------------------- -->
+    <section id="view-scanner" class="hidden space-y-6">
+      <div class="max-w-md mx-auto bg-white p-5 rounded-3xl border border-slate-200 shadow-xl space-y-4 text-center">
+
+        <div class="space-y-1">
+          <span
+            class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xl mx-auto">
+            📷
+          </span>
+          <h3 class="text-base font-extrabold text-slate-900">Pemindai QR Code Lapak Aman Pangan</h3>
+          <p class="text-xs text-slate-500">Arahkan kamera smartphone ke stiker QR Code yang terpasang di lapak
+            pedagang.</p>
+        </div>
+
+        <!-- Simulated Camera Viewfinder -->
+        <div
+          class="relative w-full h-56 bg-slate-900 rounded-2xl overflow-hidden border-2 border-emerald-500 flex items-center justify-center shadow-inner">
+          <div
+            class="absolute inset-8 border-2 border-dashed border-emerald-400 rounded-xl pointer-events-none flex items-center justify-center">
+            <span class="w-full h-0.5 bg-emerald-400 animate-bounce"></span>
+          </div>
+          <div class="z-10 text-white/80 text-xs">
+            <span class="block text-2xl mb-1">🔍</span>
+            <span>Mencari Barcode / Token Lapak...</span>
+          </div>
+        </div>
+
+        <!-- Token Input & Quick Test Buttons -->
+        <div class="space-y-2 text-left">
+          <label class="block text-xs font-bold text-slate-700">Token Lapak atau Hasil Pindai Kamera:</label>
+          <div class="flex space-x-2">
+            <input type="text" id="scanner-token-input" value="SFS-LPG-PG01-SAFE-2026"
+              class="flex-1 text-xs p-2.5 rounded-xl border border-slate-300 font-mono focus:border-emerald-600 outline-none" />
+            <button onclick="window.sfsApp.executeScanVerification()"
+              class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow transition">
+              Verifikasi
+            </button>
+          </div>
+
+          <div class="flex items-center space-x-2 pt-1 text-xs">
+            <span class="text-slate-400 text-[11px]">Uji Coba:</span>
+            <button onclick="window.sfsApp.simulateScanToken('SFS-LPG-PG01-SAFE-2026')"
+              class="text-emerald-700 font-bold hover:underline">
+              [Lapak Aman Pasir Gintung]
+            </button>
+            <button onclick="window.sfsApp.simulateScanToken('SFS-LPG-PJ08-ALERT-2026')"
+              class="text-rose-700 font-bold hover:underline">
+              [Lapak Formalin Pasar Panjang]
+            </button>
+          </div>
+        </div>
+
+        <!-- Scanner Result Container -->
+        <div id="scanner-result-container" class="hidden pt-2"></div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 3. MANDATORY FOOTER (PERMANEN DI SELURUH HALAMAN / LAYAR / DOKUMEN CETAK) -->
+  <!-- ========================================================================= -->
+  <footer class="mt-auto bg-slate-900 text-slate-300 border-t border-slate-800 py-4 px-4 text-center select-none">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+
+      <div class="flex items-center space-x-2 text-slate-400">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span>Smart Food Safety Lampung — Versi 2.0 (Refined Regional Master)</span>
+      </div>
+
+      <!-- MANDATORY TEXT: Copyright©2026 by M. Andri Junaidi dan Dr. Erliyan Redy Susanto, M.Kom -->
+      <div class="font-semibold text-slate-200 tracking-wide text-xs sm:text-sm">
+        Copyright©2026 by M. Andri Junaidi dan Dr. Erliyan Redy Susanto, M.Kom
+      </div>
+
+      <div class="text-[11px] text-slate-400">
+        BBPOM di Bandar Lampung & Dinas Ketahanan Pangan
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- 4. MODALS: CITO RED ALERT, DYNAMIC QR STICKER, DETAIL PASAR, PDF REPORT   -->
+  <!-- ========================================================================= -->
+
+  <!-- MODAL 1: 🚨 CITO RED ALERT EMERGENCY OVERLAY (< 10 DETIK WHATSAPP) -->
+  <div id="cito-alert-modal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div
+      class="relative w-full max-w-lg bg-gradient-to-b from-rose-950 via-slate-900 to-black text-white p-6 rounded-3xl border-2 border-rose-600 shadow-2xl text-center space-y-4">
+
+      <!-- Siren Pulsing Icon -->
+      <div
+        class="w-16 h-16 rounded-full bg-rose-600 text-white flex items-center justify-center text-3xl mx-auto animate-bounce shadow-lg shadow-rose-600/50">
+        🚨
+      </div>
+
+      <div>
+        <span class="px-3 py-1 rounded-full text-xs font-black bg-rose-600 text-white tracking-widest uppercase">
+          CITO RED ALERT TINGKAT 1
+        </span>
+        <h3 class="text-xl font-extrabold text-white mt-2">BAHAN BERBAHAYA POSITIF TERDETEKSI!</h3>
+        <p class="text-xs text-rose-200">Hasil rapid test lapangan mendeteksi racun kimia berbahaya di pasar
+          tradisional.</p>
+      </div>
+
+      <!-- Detail Pelanggaran -->
+      <div id="cito-modal-details"></div>
+
+      <!-- SLA Countdown Timer (< 10 detik per PRD FR-07 & 2.3) -->
+      <div class="bg-rose-900/60 p-3 rounded-xl border border-rose-700/80 space-y-1.5">
+        <div class="flex items-center justify-between text-xs font-bold text-rose-200">
+          <span>Otomatis Kirim Broadcast Darurat BBPOM dalam:</span>
+          <span id="cito-countdown-display" class="font-mono text-amber-300 text-sm">10 detik</span>
+        </div>
+        <div class="w-full bg-rose-950 h-2 rounded-full overflow-hidden border border-rose-800">
+          <div id="cito-countdown-progress" class="bg-amber-400 h-full w-full transition-all duration-1000 ease-linear">
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-2">
+        <a id="btn-send-whatsapp-blast" href="#" target="_blank"
+          class="w-full py-3 px-4 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl transition flex items-center justify-center space-x-2">
+          <span>💬</span>
+          <span>KIRIM SEKARANG KE WHATSAPP DARURAT BBPOM / DINKES</span>
+        </a>
+
+        <div class="flex space-x-2">
+          <button onclick="window.sfsApp.stopEmergencySiren()"
+            class="flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+            🔇 Matikan Sirine Audio
+          </button>
+          <button onclick="window.sfsApp.closeCitoModal()"
+            class="flex-1 py-2 px-3 rounded-lg text-xs font-bold bg-rose-900 hover:bg-rose-800 text-white transition">
+            Tutup Dialog
+          </button>
+        </div>
+      </div>
+
+      <!-- Mandatory Footer on Modal -->
+      <div class="text-[10px] text-slate-400 border-t border-slate-800 pt-2 font-mono">
+        Copyright©2026 by M. Andri Junaidi dan Dr. Erliyan Redy Susanto, M.Kom
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 2: 🏷️ DYNAMIC QR CODE STICKER "LAPAK AMAN PANGAN" -->
+  <div id="qr-success-modal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div
+      class="relative w-full max-w-sm bg-white p-6 rounded-3xl shadow-2xl border border-slate-200 text-center space-y-4">
+
+      <!-- Stiker Lapak Aman Pangan Header -->
+      <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-3 rounded-2xl shadow">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-200 block">Sertifikat Digital Lapak
+          Tradisional</span>
+        <h4 class="text-sm font-extrabold mt-0.5">LAPAK BEBAS BAHAN BERBAHAYA</h4>
+        <span class="text-[10px] text-emerald-100">Dinas Ketahanan Pangan & BBPOM Lampung</span>
+      </div>
+
+      <!-- Dynamic QR Canvas Container -->
+      <div class="flex items-center justify-center p-2 bg-slate-50 rounded-2xl border border-slate-200">
+        <div id="qr-canvas-container" class="p-2 bg-white rounded-xl shadow-inner"></div>
+      </div>
+
+      <!-- Trader Information -->
+      <div class="text-left space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+        <div class="flex justify-between"><span class="text-slate-500">Nama Pedagang:</span><b id="qr-modal-trader-name"
+            class="text-slate-800">-</b></div>
+        <div class="flex justify-between"><span class="text-slate-500">Lokasi Lapak:</span><b id="qr-modal-stall-info"
+            class="text-slate-800">-</b></div>
+        <div class="flex justify-between"><span class="text-slate-500">Skor Keamanan Pangan:</span><b
+            id="qr-modal-safety-score" class="text-emerald-700">98.5/100</b></div>
+        <div class="flex justify-between"><span class="text-slate-500">Token Digital:</span><span id="qr-modal-token"
+            class="font-mono text-[10px] text-slate-600 font-bold">-</span></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex space-x-2">
+        <button onclick="window.print()"
+          class="flex-1 py-2.5 px-3 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow transition">
+          🖨️ Cetak Stiker
+        </button>
+        <button onclick="window.sfsApp.closeQrModal()"
+          class="py-2.5 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition">
+          Tutup
+        </button>
+      </div>
+
+      <!-- Mandatory Footer -->
+      <div class="text-[9px] text-slate-400 font-mono border-t border-slate-100 pt-2">
+        Copyright©2026 by M. Andri Junaidi dan Dr. Erliyan Redy Susanto, M.Kom
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 3: 🏪 DETAIL PASAR & LAPAK TERDAFTAR -->
+  <div id="market-detail-modal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div
+      class="relative w-full max-w-lg bg-white p-5 rounded-3xl shadow-2xl border border-slate-200 space-y-4 text-left">
+
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div>
+          <h4 id="market-modal-title" class="text-base font-extrabold text-slate-900">Nama Pasar</h4>
+          <p id="market-modal-subtitle" class="text-xs text-slate-500">Alamat Pasar</p>
+        </div>
+        <button onclick="window.sfsApp.closeMarketDetailModal()"
+          class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold">
+          ✕
+        </button>
+      </div>
+
+      <div id="market-modal-content"></div>
+
+      <!-- Mandatory Footer -->
+      <div class="text-[10px] text-slate-400 font-mono border-t border-slate-100 pt-2 text-center">
+        Copyright©2026 by M. Andri Junaidi dan Dr. Erliyan Redy Susanto, M.Kom
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 4: 📄 CETAK LAPORAN RESMI SIDAK (OFFICIAL PDF / PRINT VIEW) -->
+  <div id="official-report-modal"
+    class="hidden fixed inset-0 z-50 overflow-y-auto p-4 sm:p-8 bg-black/75 backdrop-blur-sm flex justify-center">
+    <div class="relative w-full max-w-4xl bg-white p-8 rounded-2xl shadow-2xl space-y-6 text-slate-900 my-auto"
+      id="official-report-printable-area">
+
+      <!-- Kop Surat Resmi Pemprov Lampung & BBPOM -->
+      <div class="flex items-center justify-between border-b-4 border-double border-slate-800 pb-4 text-center">
+        <img src="public/LOGO_KOTA_BANDAR_LAMPUNG_BARU.png" alt="Logo Pemda" class="h-20 w-auto object-contain" />
+        <div class="flex-1 px-4">
+          <h4 class="text-sm font-bold uppercase tracking-wider text-slate-700">PEMERINTAH PROVINSI LAMPUNG</h4>
+          <h2 class="text-lg font-black uppercase text-slate-900">DINAS KETAHANAN PANGAN & PERTANIAN</h2>
+          <h3 class="text-xs font-bold uppercase tracking-wide text-emerald-800">BALAI BESAR PENGAWAS OBAT DAN MAKANAN
+            (BBPOM) DI BANDAR LAMPUNG</h3>
+          <p class="text-[11px] text-slate-500 mt-1">Jl. Drs. Warsito No. 4, Teluk Betung, Bandar Lampung | Telp: (0721)
+            485123 | Website: sfs-lampung.go.id</p>
+        </div>
+        <img src="public/UNIVERSITASTEKNOKRAT.png" alt="Logo Teknokrat" class="h-20 w-auto object-contain" />
+      </div>
+
+      <!-- Judul Dokumen -->
+      <div class="text-center space-y-1">
+        <h3 class="text-base font-black underline uppercase tracking-wide">BERITA ACARA REKAPITULASI SIDAK KEAMANAN
+          PANGAN</h3>
+        <p class="text-xs text-slate-600">Nomor: 521.1/SFS-LPG/XI/2026 — Tanggal Cetak: <span id="report-print-date">11
+            November 2026</span></p>
+      </div>
+
+      <!-- Ringkasan Eksekutif -->
+      <div class="grid grid-cols-4 gap-3 text-center text-xs bg-slate-50 p-3 rounded-lg border border-slate-200">
+        <div><span class="text-slate-500 block">Total Sampel:</span><b class="text-sm">412 Sampel</b></div>
+        <div><span class="text-slate-500 block">Lolos Bebas Racun:</span><b class="text-sm text-emerald-700">391 Sampel
+            (94.8%)</b></div>
+        <div><span class="text-slate-500 block">Temuan Formalin:</span><b class="text-sm text-rose-700">1 Kasus (Pasar
+            Panjang)</b></div>
+        <div><span class="text-slate-500 block">Tingkat Kepatuhan:</span><b class="text-sm text-emerald-700">97.6%
+            (Gintung)</b></div>
+      </div>
+
+      <!-- Tabel Data Rekapitulasi Sidak -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left border border-slate-300">
+          <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+            <tr>
+              <th class="p-2 text-center">No</th>
+              <th class="p-2">Kode Sidak</th>
+              <th class="p-2">Pasar Tradisional</th>
+              <th class="p-2">Lapak / Pedagang</th>
+              <th class="p-2">Komoditas</th>
+              <th class="p-2 text-center">Status Keseluruhan</th>
+              <th class="p-2 text-center">Formalin</th>
+              <th class="p-2 text-center">Boraks</th>
+              <th class="p-2 text-right">Skor AI</th>
+            </tr>
+          </thead>
+          <tbody id="report-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Tanda Tangan Resmi & Legitimasi -->
+      <div class="grid grid-cols-2 gap-8 pt-6 text-center text-xs">
+        <div>
+          <p class="text-slate-600">Mengetahui,</p>
+          <p class="font-bold text-slate-900 mt-0.5">Kepala BBPOM di Bandar Lampung</p>
+          <div class="h-16 flex items-center justify-center">
+            <span
+              class="text-[11px] font-mono text-emerald-800 border border-emerald-400 px-3 py-1 rounded bg-emerald-50">
+              ✓ TTD Digital Tersertifikasi BSrE
+            </span>
+          </div>
+          <p class="font-bold text-slate-900 underline">Dra. Ani Fatimah, Apt., M.Kes</p>
+          <p class="text-slate-500">NIP. 19680312 199303 2 001</p>
+        </div>
+
+        <div>
+          <p class="text-slate-600">Bandar Lampung, 11 November 2026</p>
+          <p class="font-bold text-slate-900 mt-0.5">Kepala Dinas Ketahanan Pangan Prov. Lampung</p>
+          <div class="h-16 flex items-center justify-center">
+            <span
+              class="text-[11px] font-mono text-emerald-800 border border-emerald-400 px-3 py-1 rounded bg-emerald-50">
+              ✓ TTD Digital Tersertifikasi BSrE
+            </span>
+          </div>
+          <p class="font-bold text-slate-900 underline">Dr. Ir. Fitria Hidayah, M.M</p>
+          <p class="text-slate-500">NIP. 19700815 199503 1 002</p>
+        </div>
+      </div>
+
+      <!-- MANDATORY PERMANENT FOOTER DI CETAKAN LAPORAN RESMI (PRD 1.2 & ACCEPTANCE CRITERIA) -->
+      <div
+        class="border-t-2 border-slate-300 pt-3 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-600 font-semibold">
+        <span>Smart Food Safety Lampung — Dokumen Resmi Pemprov Lampung & BBPOM</span>
+        <span class="text-slate-900 font-bold">Copyright©2026 by M. Andri Junaidi dan Dr. Erliyan Redy Susanto,
+          M.Kom</span>
+      </div>
+
+      <!-- Action Buttons Modal (Hidden on Print) -->
+      <div class="no-print flex justify-end space-x-3 pt-4 border-t border-slate-200">
+        <button onclick="window.sfsApp.triggerPrint()"
+          class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-lg transition flex items-center space-x-1.5">
+          <span>🖨️</span>
+          <span>Cetak / Simpan PDF</span>
+        </button>
+        <button onclick="window.sfsApp.closeOfficialReportPrintView()"
+          class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition">
+          Tutup
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- ========================================================================= -->
+  <!-- 5. JAVASCRIPT LIBRARIES & APPLICATION SCRIPTS                             -->
+  <!-- ========================================================================= -->
+
+  <!-- Leaflet JS for Lampung Maps -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Chart.js for Executive Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- QRCode.js for Dynamic QR Code Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Canvas Confetti for Safe Stall Celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Application Modules -->
+  <script src="src/data.js"></script>
+  <script src="src/ai-skill.js"></script>
+  <script src="src/app.js"></script>
+
+</body>
+
+</html>
